@@ -1,0 +1,12 @@
+Phrase : "{phrase}"
+
+Questions : 
+1. {question_1}
+2. {question_2}
+3. {question_3}
+4. {question_4}
+5. {question_5}
+
+Pour chaque question, réponds avec OUI ou NON.
+Réponds UNIQUEMENT avec ce JSON valide (sans markdown) :
+{{"q1": "oui"|"non", "q2": "oui"|"non", "q3": "oui"|"non", "q4": "oui"|"non", "q5": "oui"|"non"}}

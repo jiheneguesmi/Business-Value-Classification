@@ -30,8 +30,10 @@ import spacy
 from langdetect import LangDetectException, detect
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-CLEAN_INPUT_DIR = r"C:\Users\Jihene\Downloads\Business-Value-Knowledge-Graph\main\Extraction_et_Embedding\classification_test\decoupage\clean_markdown"
-PHRASES_OUT_DIR = r"C:\Users\Jihene\Downloads\Business-Value-Knowledge-Graph\main\Extraction_et_Embedding\classification_test\decoupage\phrases"
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+CLEAN_INPUT_DIR = str(SCRIPT_DIR / "clean_markdown")
+PHRASES_OUT_DIR = str(SCRIPT_DIR / "phrases")
 
 # Threshold unique : en dessous de cette longueur, une phrase spaCy est courte.
 MIN_MERGE_CHARS = 80

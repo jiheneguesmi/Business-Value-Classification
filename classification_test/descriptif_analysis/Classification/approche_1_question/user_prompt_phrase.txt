@@ -1,0 +1,4 @@
+Phrase : "{phrase}"
+
+Réponds UNIQUEMENT avec ce JSON valide (sans markdown) :
+{{"reponse": "oui"}} ou {{"reponse": "non"}}

@@ -1,0 +1,29 @@
+flowchart TD
+    A[Documents PDF commerciaux] --> B[Extraction PDF vers Markdown]
+    B --> C[Nettoyage du contenu]
+    C --> D[Découpage en paragraphes]
+    D --> E[Découpage en phrases]
+
+    E --> F1[Classification sans contexte]
+    D --> F2[Classification avec contexte paragraphe]
+
+    F1 --> G[Questions ROI / Notoriété / Obligation]
+    F2 --> G
+
+    G --> H[Appels multi-LLM via OpenRouter]
+    H --> I[Réponses Oui / Non par modèle et question]
+    I --> J[Vote majoritaire]
+    J --> K[Scores par catégorie]
+    K --> L[Catégorie finale : ROI, Notoriété, Obligation ou Description]
+
+    I --> M[Calcul de l'accord inter-modèles]
+    F1 --> N[Analyse comparative contexte vs sans contexte]
+    F2 --> N
+
+    L --> O[Exports JSON détaillés]
+    M --> O
+    N --> O
+
+    O --> P[Excel de synthèse]
+    O --> Q[Tenseurs NumPy]
+    O --> R[Graphiques et analyses statistiques]

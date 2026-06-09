@@ -36,12 +36,13 @@ import spacy
 from langdetect import LangDetectException, detect
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-MARKDOWN_ROOT       = r"C:\Users\Jihene\Downloads\Business-Value-Knowledge-Graph\main\Extraction_et_Embedding\classification_test\decoupage\clean_markdown"
-SEGMENTS_OUTPUT_DIR = r"C:\Users\Jihene\Downloads\Business-Value-Knowledge-Graph\main\Extraction_et_Embedding\classification_test\decoupage\paragraphes"
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+MARKDOWN_ROOT       = str(SCRIPT_DIR / "clean_markdown")
+SEGMENTS_OUTPUT_DIR = str(SCRIPT_DIR / "paragraphes")
 
 MIN_MERGE_CHARS = 80   # identique au script 4
 
-os.makedirs(SEGMENTS_OUTPUT_DIR, exist_ok=True)
 
 # ── Modèles spaCy ─────────────────────────────────────────────────────────────
 _NLP: dict = {}

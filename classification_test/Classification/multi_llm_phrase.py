@@ -39,13 +39,14 @@ import requests
 load_dotenv()
 
 # ── Configuration ──────────────────────────────────────────────────────────────
-SEGMENTS_INPUT_DIR = r"F:\Jihene\business_value_classification\classification_test\Decoupage\phrases"
-OUTPUT_DIR         = r"F:\Jihene\business_value_classification\classification_test\Classification\resultats_classification_phrases"
-SYSTEM_PROMPT_FILE = r"F:\Jihene\business_value_classification\classification_test\Classification\system_prompt_phrase.txt"
-USER_PROMPT_FILE   = r"F:\Jihene\business_value_classification\classification_test\Classification\user_prompt_phrase.txt"
-QUESTIONS_FILE     = r"F:\Jihene\business_value_classification\classification_test\Classification\liste_questions.txt"
+SCRIPT_DIR = Path(__file__).resolve().parent
+CLASSIFICATION_TEST_ROOT = SCRIPT_DIR.parent
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+SEGMENTS_INPUT_DIR = str(CLASSIFICATION_TEST_ROOT / "Decoupage" / "phrases")
+OUTPUT_DIR         = str(SCRIPT_DIR / "resultats_classification_phrases")
+SYSTEM_PROMPT_FILE = str(SCRIPT_DIR / "system_prompt_phrase.txt")
+USER_PROMPT_FILE   = str(SCRIPT_DIR / "user_prompt_phrase.txt")
+QUESTIONS_FILE     = str(SCRIPT_DIR / "liste_questions.txt")
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:

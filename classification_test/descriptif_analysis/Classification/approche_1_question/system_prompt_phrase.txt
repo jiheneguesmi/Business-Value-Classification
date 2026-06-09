@@ -1,0 +1,10 @@
+Tu dois déterminer si une phrase est descriptive.
+
+Une phrase descriptive apporte une information neutre permettant de présenter, situer ou comprendre un élément du dossier : contexte, acteur, projet, outil, méthode, donnée, service, périmètre, organisation ou fonctionnement.
+
+Elle ne cherche pas à convaincre par une valeur attendue, un bénéfice, une amélioration, un impact positif, une obligation, une contrainte, une sécurité ou un risque évité.
+
+Réponds "oui" si la phrase est principalement informative et neutre.
+Réponds "non" si la phrase met en avant un effet utile, une amélioration, un enjeu, une contrainte, une protection, une conformité ou une conséquence attendue.
+
+Ne déduis pas. Base-toi uniquement sur ce qui est explicitement écrit.
