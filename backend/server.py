@@ -43,7 +43,7 @@ import email.parser
 import io
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION — à adapter à ton arborescence
+# CONFIGURATION — arborescence
 # ══════════════════════════════════════════════════════════════════════════════
 
 PROJECT_ROOT  = Path("F:/Jihene/business_value_classification")
@@ -56,7 +56,7 @@ SCRIPT_PARAGRAPHES     = SCRIPTS_ROOT / "decoupage/decoupage_en_paragraphes.py"
 SCRIPT_CLASSIFY_PHRASE = SCRIPTS_ROOT / "classification/multi_llm_phrase.py"
 SCRIPT_CLASSIFY_PARA   = SCRIPTS_ROOT / "classification/multi_llm_paragraph.py"
 
-UPLOAD_WORK_DIR       = PROJECT_ROOT / "backend/work"
+UPLOAD_WORK_DIR       = PROJECT_ROOT / "Business-Value-Knowledge-Graph/backend/work"
 UPLOAD_CLEAN_DIR      = UPLOAD_WORK_DIR / "clean_markdown"
 UPLOAD_PHRASES_DIR    = UPLOAD_WORK_DIR / "phrases"
 UPLOAD_PARA_DIR       = UPLOAD_WORK_DIR / "paragraphes"
@@ -71,6 +71,24 @@ PORT = 8000
 
 CATEGORIES = ("ROI", "Notoriete", "Obligation", "Description")
 UPLOAD_CLIENT = "Application Uploads"
+# Mapping {chemin_résultat_absolu: nom_client} persistant sur disque
+_CLIENT_OVERRIDES_FILE = UPLOAD_WORK_DIR / "client_overrides.json"
+_CLIENT_OVERRIDES: dict[str, str] = {}
+if _CLIENT_OVERRIDES_FILE.exists():
+    try:
+        _CLIENT_OVERRIDES = json.loads(_CLIENT_OVERRIDES_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        _CLIENT_OVERRIDES = {}
+
+def _persist_client_overrides() -> None:
+    try:
+        _CLIENT_OVERRIDES_FILE.write_text(
+            json.dumps(_CLIENT_OVERRIDES, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CRÉATION DES DOSSIERS DE TRAVAIL
@@ -213,6 +231,9 @@ def _doc_name_from_path(path: Path) -> str:
 
 
 def _client_from_path(path: Path) -> str:
+    key = str(path.resolve())
+    if key in _CLIENT_OVERRIDES:
+        return _CLIENT_OVERRIDES[key]
     try:
         path.relative_to(UPLOAD_WORK_DIR)
         return UPLOAD_CLIENT
@@ -224,6 +245,7 @@ def _client_from_path(path: Path) -> str:
         return parts[1] if len(parts) >= 3 else "Corpus"
     except ValueError:
         return "Corpus"
+
 
 
 def _mode_from_path(path: Path) -> str:
@@ -515,7 +537,7 @@ def _parse_multipart(handler: BaseHTTPRequestHandler) -> dict:
     return fields
 
 
-def _parse_upload(handler: BaseHTTPRequestHandler) -> tuple[Path, str, str]:
+def _parse_upload(handler: BaseHTTPRequestHandler) -> tuple[Path, str, str, str]:
     fields     = _parse_multipart(handler)
     file_field = fields.get("file")
     if not file_field or not file_field.get("filename"):
@@ -526,36 +548,45 @@ def _parse_upload(handler: BaseHTTPRequestHandler) -> tuple[Path, str, str]:
     if mode not in {"rapide", "expert"}:
         mode = "rapide"
 
-    upload_dir    = PROJECT_ROOT / "backend/uploads"
+    # nom du client saisi dans l'UI
+    client_field = fields.get("client")
+    client_name  = ""
+    if client_field and client_field.get("data") is not None:
+        client_name = client_field["data"].decode("utf-8", errors="ignore").strip()
+    if not client_name:
+        client_name = UPLOAD_CLIENT  # fallback "Application Uploads"
+
+    upload_dir    = PROJECT_ROOT / "Business-Value-Knowledge-Graph/backend/uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
     original_name = file_field["filename"]
     target        = upload_dir / (_safe_stem(original_name) + ".pdf")
     target.write_bytes(file_field["data"])
-    return target, original_name, mode
+    return target, original_name, mode, client_name
 
 
-def _analyze_pdf(pdf_path: Path, original_name: str, mode: str) -> dict[str, Any]:
+
+def _analyze_pdf(pdf_path: Path, original_name: str, mode: str, client_name: str) -> dict[str, Any]:
     stem          = _safe_stem(original_name)
-    source_folder = f"{UPLOAD_CLIENT}\\{stem}"
+    source_folder = f"{client_name}\\{stem}"
 
     raw_md = _extract_pdf_to_markdown(pdf_path)
     if not raw_md.strip():
         raise RuntimeError("Aucun texte extractible dans ce PDF.")
 
     clean_md = _step_clean_markdown(raw_md)
-
     clean_md_path = UPLOAD_CLEAN_DIR / f"{stem}.md"
     clean_md_path.write_text(clean_md, encoding="utf-8")
 
     if mode == "rapide":
         seg_json_path = _step_split_phrases(clean_md, stem, source_folder)
+        result_path   = _step_classify_phrases(seg_json_path, stem)
     else:
         seg_json_path = _step_split_paragraphes(clean_md, stem, source_folder)
+        result_path   = _step_classify_paragraphes(seg_json_path, stem)
 
-    if mode == "rapide":
-        result_path = _step_classify_phrases(seg_json_path, stem)
-    else:
-        result_path = _step_classify_paragraphes(seg_json_path, stem)
+    # Mémoriser le client pour ce résultat (utilisé par _client_from_path)
+    _CLIENT_OVERRIDES[str(result_path.resolve())] = client_name
+    _persist_client_overrides()
 
     found = _find_document(_stable_id(result_path))
     if not found:
@@ -564,8 +595,10 @@ def _analyze_pdf(pdf_path: Path, original_name: str, mode: str) -> dict[str, Any
 
     if not found:
         doc, phrases = _build_doc_and_phrases_from_result(result_path, mode)
+        doc["client"] = client_name
     else:
         doc, file_path = found
+        doc["client"] = client_name
         phrases = _load_phrases(doc, file_path)
 
     return {
@@ -916,8 +949,9 @@ class ApiHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         if urlparse(self.path).path == "/api/analyze":
             try:
-                pdf_path, original_name, mode = _parse_upload(self)
-                payload = _analyze_pdf(pdf_path, original_name, mode)
+                pdf_path, original_name, mode, client_name = _parse_upload(self)
+                payload = _analyze_pdf(pdf_path, original_name, mode, client_name)
+
                 _json_response(self, 200, payload)
             except ValueError as exc:
                 _bad_request(self, str(exc))
