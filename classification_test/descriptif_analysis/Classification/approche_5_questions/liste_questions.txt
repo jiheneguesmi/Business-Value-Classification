@@ -1,7 +1,0 @@
-[DESC]Cette phrase te permet-elle de justifier la dépense devant ta hiérarchie ?
-
-[DESC]Cette phrase te protège-t-elle si la décision est remise en question par ta hiérarchie ?
-
-[DESC]Cette phrase te donne-t-elle confiance que le fournisseur a déjà résolu ce problème pour d'autres ?
-
-[DESC]Cette phrase te donnerait-elle envie de recommander ce fournisseur à un pair ?
